@@ -1,54 +1,57 @@
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, List } from "lucide-react";
-import FeedbackForm from "@/components/FeedbackForm";
-import FeedbackList from "@/components/FeedbackList";
+import { useState, useEffect } from "react";
+import { supabase } from "../supabaseClient";
 
-const Index = () => {
-  const [activeTab, setActiveTab] = useState("submit");
+export default function Index() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [rating, setRating] = useState("");
+  const [message, setMessage] = useState("");
+  const [feedbackList, setFeedbackList] = useState<any[]>([]);
+
+  const submitFeedback = async () => {
+    const { error } = await supabase
+      .from("feedback")
+       .insert([{ name, email, rating: parseInt(rating), message }]);
+
+    if (error) console.error(error);
+    else {
+      alert("Feedback saved!");
+      getFeedback();
+    }
+  };
+
+  const getFeedback = async () => {
+    const { data } = await supabase
+      .from("feedback")
+      .select("*")
+      .order("submittedAt", { ascending: false });
+    if (data) setFeedbackList(data);
+  };
+
+  useEffect(() => {
+    getFeedback();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      {/* Hero Section */}
-      <header className="py-16 px-4 text-center">
-        <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent animate-fade-in">
-          Feedback System
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-slide-up">
-          Share your thoughts and help us improve. Your feedback matters!
-        </p>
-      </header>
+    <div style={{ padding: 20 }}>
+      <h2>Feedback Form</h2>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 pb-16">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-4xl mx-auto">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 shadow-elegant">
-            <TabsTrigger value="submit" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Submit Feedback
-            </TabsTrigger>
-            <TabsTrigger value="view" className="flex items-center gap-2">
-              <List className="w-4 h-4" />
-              View All
-            </TabsTrigger>
-          </TabsList>
+      <input placeholder="Name" onChange={(e) => setName(e.target.value)} /><br/><br/>
+      <input placeholder="Email" onChange={(e) => setEmail(e.target.value)} /><br/><br/>
+      <input placeholder="Rating (1-5)" type="number" onChange={(e) => setRating(e.target.value)} /><br/><br/>
+      <textarea placeholder="Message" onChange={(e) => setMessage(e.target.value)} /><br/><br/>
 
-          <TabsContent value="submit" className="flex justify-center animate-fade-in">
-            <FeedbackForm />
-          </TabsContent>
+      <button onClick={submitFeedback}>Submit</button>
 
-          <TabsContent value="view" className="flex justify-center animate-fade-in">
-            <FeedbackList />
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 text-center text-sm text-muted-foreground border-t">
-        <p>Powered by Lovable Cloud • Built with React & Supabase</p>
-      </footer>
+      <h3>Feedback List</h3>
+      {feedbackList.map((item, index) => (
+        <div key={index} style={{ border: "1px solid #aaa", padding: "10px", marginTop: "10px" }}>
+          <strong>{item.name}</strong> – {item.rating}/5 <br />
+          {item.email}<br />
+          {item.message}<br />
+          <small>{new Date(item.submittedAt).toLocaleString()}</small>
+        </div>
+      ))}
     </div>
   );
-};
-
-export default Index;
+}
