@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Index() {
   const [name, setName] = useState("");
